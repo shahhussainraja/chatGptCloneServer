@@ -1,11 +1,18 @@
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const mongoose = require("mongoose");
+require('dotenv')?.config();
+const cors = require("cors")
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var chatgptRoute = require('./routes/chatgptApiRoutes.js');
+
+require('dotenv')?.config();
+const { Configuration, OpenAIApi } = require("openai");
 
 var app = express();
 
@@ -18,16 +25,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+// app.use(cors());
 
+console.log("Server in Running....")
+mongoose.connect(
+  `mongodb+srv://hussainraja:${process.env.AtlasPassword}@chatgptchathistory.sf7qk8p.mongodb.net/?retryWrites=true&w=majority`,{ useNewUrlParser: true })
+  .then(() => console.log("Connected to Mongo"))
+  .catch((error) => console.log("error " + error.message));
+  
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/', chatgptRoute);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-console.log("Server in Running....")
+
 
 // error handler
 app.use(function(err, req, res, next) {
