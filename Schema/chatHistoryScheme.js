@@ -2,7 +2,11 @@ const mongodb = require("mongoose")
 
 const chatHistory  = new mongodb.Schema({
     userId :{
-        type : String
+        type : mongodb.Schema.Types.ObjectId,
+        ref : "user"
+    },
+    chatTitle : {
+        type : String,
     },
     history : [
         {
@@ -11,7 +15,4 @@ const chatHistory  = new mongodb.Schema({
         }
     ]
 })
-
-historyModel = mongodb.model( "chatHistory" , chatHistory );
-
-module.exports = historyModel
+module.exports = mongodb.model( "chatHistory" , chatHistory );

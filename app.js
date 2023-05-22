@@ -1,4 +1,3 @@
-
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -10,6 +9,7 @@ const cors = require("cors")
 
 var indexRouter = require('./routes/index');
 var chatgptRoute = require('./routes/chatgptApiRoutes.js');
+var userRoute = require('./routes/userRoutes');
 
 require('dotenv')?.config();
 const { Configuration, OpenAIApi } = require("openai");
@@ -25,16 +25,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-// app.use(cors());
+app.use(cors());
 
 console.log("Server in Running....")
-mongoose.connect(
-  `mongodb+srv://hussainraja:${process.env.AtlasPassword}@chatgptchathistory.sf7qk8p.mongodb.net/?retryWrites=true&w=majority`,{ useNewUrlParser: true })
-  .then(() => console.log("Connected to Mongo"))
-  .catch((error) => console.log("error " + error.message));
+// mongoose.connect(
+//   `mongodb+srv://hussainraja:${process.env.AtlasPassword}@chatgptchathistory.sf7qk8p.mongodb.net/?retryWrites=true&w=majority`,{ useNewUrlParser: true })
+//   .then(() => console.log("Connected to Mongo"))
+//   .catch((error) => console.log("Mongodb Error " + error.message));
+mongoose.connect(process.env.db_Connection, { useNewUrlParser: true })
+.then(() => console.log("Connected to Mongo...."))
+.catch((error) => console.log(error.message));
   
-app.use('/', indexRouter);
-app.use('/', chatgptRoute);
+app.use('/brainStorm', chatgptRoute);
+app.use('/brainStorm', userRoute);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
