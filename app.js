@@ -2,12 +2,11 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser')
 var logger = require('morgan');
 const mongoose = require("mongoose");
 require('dotenv')?.config();
 const cors = require("cors")
-
-var indexRouter = require('./routes/index');
 var chatgptRoute = require('./routes/chatgptApiRoutes.js');
 var userRoute = require('./routes/userRoutes');
 
@@ -19,6 +18,9 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+
+app.use(express.json({ limit: "200mb" }));
+app.use(express.urlencoded({ extended: true, limit: "200mb" }));
 
 app.use(logger('dev'));
 app.use(express.json());

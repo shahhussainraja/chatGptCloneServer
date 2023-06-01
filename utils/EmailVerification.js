@@ -29,7 +29,7 @@ const sendOTPVerificationEmail = async(id ,name, emailAddress )=>{
 
           var emailData = {
             body: {
-                name: `${name} Appleseed`,
+                name: `${name}`,
                 intro: ['Welcome to BrainStack! We\'re very excited to have you on board.',`Your OTP Code is ${opt}`],
                 outro: 'Need help, or have questions? Just reply to this email, we\'d love to help.'
             }

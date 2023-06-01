@@ -14,7 +14,7 @@ const userVerificationSchema  = mongoose.Schema({
     },
     expiresAt : { 
         type   : Date
-    }
+    }           
     
 });
 module.exports  = mongoose.model("userOTPVerification", userVerificationSchema);

@@ -3,6 +3,7 @@ var router = express.Router();
 require('dotenv')?.config();
 const { Configuration, OpenAIApi } = require("openai");
 const chatHistory = require("../Schema/chatHistoryScheme")
+var ObjectID = require('mongodb').ObjectID;
 
 // Configuration for Chatgpt
 const configuration = new Configuration({
@@ -12,14 +13,15 @@ const openai = new OpenAIApi(configuration);
 
 
 router.post("/getAsistance",async(req,res)=>{
-  try{
-    // const { messages }  = req.body
-    const messages = [{role : "user" ,content  : "who are you"  }]
+  try{  
+    console.log(req.body)
+    const { messages }  = req.body
+    console.log(req.query)
 
-    console.log(messages)
-    // if(req.body.question.length <= 0 ){
-    //     return res.status(400).send("Input message cannot be Empty")
-    // }
+    // if array zero do not process it
+    if(messages.length <= 0 ){
+        return res.status(400).send("Input message cannot be Empty")
+    }
 
     const response = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
@@ -32,41 +34,91 @@ router.post("/getAsistance",async(req,res)=>{
         temperature : 0.7
     })
 
-    console.log("respones : " + response.data.choices[0].message.content)
-    res.status(200).send(response.data.choices[0].message.content)
-
-    // const data = await chatHistory.findOne({userId : req.params.id });
+    // Extracting msg for new message to store in database
+    const userMessage =  messages[messages.length - 1] ;
+    const AIresponse  = {role  :"assistant" ,content: response.data.choices[0].message.content}
     
-    // if(data){
-    //     await chatHistory.updateOne({
-    //         "userId" : req.params.id
-    //     },{
-    //         "$push" : {
-    //             "history" : {
-    //                 "user": req.body.question ,
-    //                  "asistant": response.data.choices[0].message.content,
-    //             }
-    //         }
-    //     })
+    // check if message from existing chat
+    if(req.query.chatId !== "newChat"){
 
-    // }else {
-    // const saveHistory = new chatHistory;
-    // saveHistory.userId = req.params.id;
-    // saveHistory.history = {
-    //     user : req.body.question,
-    //     asistant : response.data.choices[0].message.content
-    // }
-    // await saveHistory.save();
-    // }
-
+        res.status(200).send({
+            AIresponse,
+            chatId : null
+        })
+        
+        const result2 = await chatHistory.findOneAndUpdate({
+            "_id" :  req.query.chatId
+        },{     
+            "$push" : {
+                "history" : { 
+                    "$each" :[messages[messages.length - 1] , AIresponse]
+                }
+            }
+        })
+        console.log("while save Existing record"  ,result2)
+    }else {
+        const saveHistory = new chatHistory({
+            userId :req.query.userId,
+            chatTitle : userMessage.content,
+            history : [
+                messages[messages.length - 1],
+                AIresponse
+            ]
+        });
+        const result = await saveHistory.save();
+        res.status(200).send({
+            AIresponse,
+            chatId : result._id
+        })
+        console.log("while save new record " , result)
+        }
 
 }catch(error){
-    return res.status(400).json({
-        message: error.message
-    })
+    res.status(500).json(error.message)
+    console.log(error.message)
 }
 
 })
+
+router.get("/getChatHistory/:id", async(req,res)=>{
+    try{
+        console.log(req.params.id)
+        const result = await chatHistory.find({ userId : req.params.id}).sort({createdAt : -1});
+        res.status(200).send(result);
+        // console.log(result)
+    }catch(err){
+        res.status(500).send(err.message)
+        console.log(err.message)
+    }
+})
+
+
+router.get("/getChatHistoryMessage/:id",async(req,res)=>{
+    try{
+        const result = await chatHistory.findOne({ _id : req.params.id},"history")
+        res.status(200).send(result);
+        // console.log(result)
+    }catch(err){
+        res.status(500).send(err.message)
+        console.log(err.message)
+    }
+})
+
+
+router.get("/deleteChatHistory/:id",async(req,res)=>{
+    try{
+        const result = await chatHistory.findByIdAndRemove({ _id : req.params.id})
+        res.status(200).send(result);
+        // console.log(result)
+    }catch(err){
+        res.status(500).send(err.message)
+        console.log(err.message)
+    }
+})
+
+
+
+
 
 
 

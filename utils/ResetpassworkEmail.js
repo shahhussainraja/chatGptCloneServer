@@ -4,6 +4,7 @@ const mailGen  = require("mailgen")
 const bcrypt  =require("bcryptjs")
 const userResetPasswordSchema = require("../Schema/userPasswordResetSchema");
 var randomstring = require("randomstring");
+require('dotenv')?.config();
 
 const sendResetPasswordEmail = async(id , emailAddress )=>{
     try{
@@ -31,14 +32,14 @@ const sendResetPasswordEmail = async(id , emailAddress )=>{
           var emailData = {
             body: {
               name: `dear user`,
-              intro: ['You have Received this email because a reset password request \n received form your BrainStack account',`${token}`],
+              intro: ['You have Received this email because a reset password request \n received form your BrainStack account'],
               action: [
                 {
                   instructions: 'Click the button below to reset your password',
                   button: {
                     color: '#22BC66',
                     text: 'Reset your passwork',
-                    link: 'https://mailgen.js/confirm?s=d9729feb74992cc3482b350163a1a010'
+                    link: `${process.env.reset_password_path}${emailAddress}/${token}`
                   }
                 },
               ],

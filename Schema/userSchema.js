@@ -1,9 +1,6 @@
 const mongodb = require("mongoose")
 const bcrypt  =require("bcryptjs")
 
-
-
-
 const user = new mongodb.Schema({
     name : {
         type : String,
@@ -17,6 +14,12 @@ const user = new mongodb.Schema({
     password :{
         type : String,
         required : true 
+    },
+    contactNumber :{
+        type : Number,
+    },
+    profileImage :{
+        type : String,
     },
     verified : {
         type: Boolean,
