@@ -30,10 +30,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 
 console.log("Server in Running....")
+
+// for altas connection 
 // mongoose.connect(
 //   `mongodb+srv://hussainraja:${process.env.AtlasPassword}@chatgptchathistory.sf7qk8p.mongodb.net/?retryWrites=true&w=majority`,{ useNewUrlParser: true })
 //   .then(() => console.log("Connected to Mongo"))
 //   .catch((error) => console.log("Mongodb Error " + error.message));
+
+
+// for local Database Connection
 mongoose.connect(process.env.db_Connection, { useNewUrlParser: true })
 .then(() => console.log("Connected to Mongo...."))
 .catch((error) => console.log(error.message));

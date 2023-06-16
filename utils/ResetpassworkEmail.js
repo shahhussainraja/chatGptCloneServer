@@ -6,6 +6,7 @@ const userResetPasswordSchema = require("../Schema/userPasswordResetSchema");
 var randomstring = require("randomstring");
 require('dotenv')?.config();
 
+// send Reset password Email
 const sendResetPasswordEmail = async(id , emailAddress )=>{
     try{
         let token = randomstring.generate();
@@ -22,7 +23,7 @@ const sendResetPasswordEmail = async(id , emailAddress )=>{
             theme : "salted",
             // Appears in header & footer of e-mails
             product :{
-              name: 'brainStack.io',
+              name: 'brainStack.au',
               link: 'https://brain-stack'
               // Optional product logo
               // logo: 'https://mailgen.js/img/logo.png'

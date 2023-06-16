@@ -2,7 +2,8 @@ var express = require('express');
 var router = express.Router();
 require('dotenv')?.config();
 const { Configuration, OpenAIApi } = require("openai");
-const chatHistory = require("../Schema/chatHistoryScheme")
+const chatHistory = require("../Schema/chatHistoryScheme");
+const auth = require('../middleware/auth');
 var ObjectID = require('mongodb').ObjectID;
 
 // Configuration for Chatgpt
@@ -12,7 +13,8 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 
-router.post("/getAsistance",async(req,res)=>{
+// for ChatGPT Chat Completion
+router.post("/getAsistance",auth,async(req,res)=>{
   try{  
     console.log(req.body)
     const { messages }  = req.body
@@ -26,12 +28,14 @@ router.post("/getAsistance",async(req,res)=>{
     const response = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages : [
-            {role: "system", content : "Your are a Educational Consultant and a Career Advisor and Your name is Matis and sticktly follow this.first introduce your self and Ask one question  At a time and strictly follow this rule. Your job is to advise which course to choose or which Career to choose based on the Student or someone looking for a Career change . Finally, give a career path to achieve the goals . Start by introducing yourself first and follow by asking personal questions only Name and Email,  Are you studying or looking for a Career change?,  What are you studying  or Where are you working currently or previously ?   Which country are you now in?   Are you looking to study in the same country or a different one  and continue asking relevant questions up to 10 Question. "},
+            {role: "system", content : "Your are a Educational Consultant and a Career Advisor and Your name is Matis also Please note that irrelevant prompts will not be entertained sticktly follow this.first introduce your self and Ask one question  At a time and strictly follow this rule. Your job is to advise which course to choose or which Career to choose based on the Student or someone looking for a Career change . Finally, give a career path to achieve the goals . Start by introducing yourself first and follow by asking personal questions only Name and Email,  Are you studying or looking for a Career change?,  What are you studying  or Where are you working currently or previously ?   Which country are you now in?   Are you looking to study in the same country or a different one  and continue asking relevant questions up to 10 Question."},
             {role: "assistant", content : "Hello, my name is Matis and I am an Educational Consultant and Career Advisor. How can I assist you today? What is your name?"},
             ...messages
             
         ],
-        temperature : 0.7
+        temperature : 0,
+        top_p: 0.1,
+        max_tokens : 100,
     })
 
     // Extracting msg for new message to store in database
@@ -40,12 +44,10 @@ router.post("/getAsistance",async(req,res)=>{
     
     // check if message from existing chat
     if(req.query.chatId !== "newChat"){
-
         res.status(200).send({
             AIresponse,
             chatId : null
         })
-        
         const result2 = await chatHistory.findOneAndUpdate({
             "_id" :  req.query.chatId
         },{     
@@ -55,7 +57,7 @@ router.post("/getAsistance",async(req,res)=>{
                 }
             }
         })
-        console.log("while save Existing record"  ,result2)
+        // console.log("while save Existing record"  ,result2)
     }else {
         const saveHistory = new chatHistory({
             userId :req.query.userId,
@@ -66,21 +68,21 @@ router.post("/getAsistance",async(req,res)=>{
             ]
         });
         const result = await saveHistory.save();
-        res.status(200).send({
+        return res.status(200).send({
             AIresponse,
             chatId : result._id
         })
-        console.log("while save new record " , result)
+        // console.log("while save new record " , result)
         }
 
 }catch(error){
+    console.log(error)
     res.status(500).json(error.message)
-    console.log(error.message)
 }
-
 })
 
-router.get("/getChatHistory/:id", async(req,res)=>{
+// fetch all chat history of specific user
+router.get("/getChatHistory/:id",auth, async(req,res)=>{
     try{
         console.log(req.params.id)
         const result = await chatHistory.find({ userId : req.params.id}).sort({createdAt : -1});
@@ -92,8 +94,8 @@ router.get("/getChatHistory/:id", async(req,res)=>{
     }
 })
 
-
-router.get("/getChatHistoryMessage/:id",async(req,res)=>{
+// fetch specific chat history message of user
+router.get("/getChatHistoryMessage/:id",auth,async(req,res)=>{
     try{
         const result = await chatHistory.findOne({ _id : req.params.id},"history")
         res.status(200).send(result);
@@ -104,8 +106,8 @@ router.get("/getChatHistoryMessage/:id",async(req,res)=>{
     }
 })
 
-
-router.get("/deleteChatHistory/:id",async(req,res)=>{
+// delete specific chat
+router.get("/deleteChatHistory/:id",auth,async(req,res)=>{
     try{
         const result = await chatHistory.findByIdAndRemove({ _id : req.params.id})
         res.status(200).send(result);
@@ -115,12 +117,5 @@ router.get("/deleteChatHistory/:id",async(req,res)=>{
         console.log(err.message)
     }
 })
-
-
-
-
-
-
-
 
 module.exports =  router;

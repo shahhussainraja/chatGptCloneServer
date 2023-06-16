@@ -4,6 +4,7 @@ const mailGen  = require("mailgen")
 const bcrypt  =require("bcryptjs")
 const userVerficationSchema = require("../Schema/userOtpSchema");
 
+// send OTP on email verificaction
 const sendOTPVerificationEmail = async(id ,name, emailAddress )=>{
     try{
         let opt = `${Math.floor(1000 + Math.random() * 9000)}` 
@@ -20,7 +21,7 @@ const sendOTPVerificationEmail = async(id ,name, emailAddress )=>{
             theme : "salted",
             // Appears in header & footer of e-mails
             product :{
-              name: 'brainStack.io',
+              name: 'brainStack.au',
               link: 'https://brain-stack'
               // Optional product logo
               // logo: 'https://mailgen.js/img/logo.png'
@@ -67,6 +68,7 @@ const sendOTPVerificationEmail = async(id ,name, emailAddress )=>{
           })
           return result;
     }catch(err){
+        console.log(err.message)
          return err
     }
 }

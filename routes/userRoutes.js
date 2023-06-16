@@ -1,8 +1,8 @@
-
 const express = require("express")
 let router = express.Router();
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
+const auth = require("../middleware/auth")
 require('dotenv')?.config();
 const sendVerificationEmail = require("../utils/EmailVerification")
 const userOtpModel = require("../Schema/userOtpSchema");
@@ -11,6 +11,7 @@ const resetTokenModel = require("../Schema/userPasswordResetSchema");
 const sendResetPasswordEmail = require("../utils/ResetpassworkEmail");
 
 
+// User login route
 router.post("/login", async (req, res)=>{
 try{
 
@@ -20,6 +21,10 @@ try{
     
     let isValid =await bcrypt.compare(req.body.password , user.password);
     if(!isValid) return  res.status(401).send("Invalid User Password");
+
+    let tokenData = {
+      id : user._id,
+    }
 
     let payload = {
       id : user._id,
@@ -31,7 +36,7 @@ try{
     }
     
     // here i have assign login user his detail and token with are embeded
-    let token = jwt.sign(payload, process.env.auth_key);
+    let token = jwt.sign(tokenData, process.env.auth_key,{expiresIn: process.env.JWT_EXPIRES_IN });
     res.status(200).send({token : token ,payload : payload})
 }catch(e){
     res.status(500).send("error " + e.message);
@@ -39,6 +44,8 @@ try{
 
 });
 
+
+// user signUp route  
 router.post("/signUp", async (req, res) => {
     try {
       let user = await userModel.findOne({ email: req.body.email });
@@ -64,9 +71,10 @@ router.post("/signUp", async (req, res) => {
     } catch (err) {
       res.status(500).send("error " + err.message);
     }
-  });
+});
 
-//send email from origional Account
+
+//verify Email route
 router.post("/verifyEmail",async(req,res)=>{
   try{
     const {id , otp} = req.body
@@ -98,7 +106,7 @@ router.post("/verifyEmail",async(req,res)=>{
 })
 
 
-// send verification Email Again 
+//send again verification email route
 router.post("/resendVerifyEmail",async(req,res)=>{
   try{
     const { id } = req.body
@@ -115,6 +123,7 @@ router.post("/resendVerifyEmail",async(req,res)=>{
   
 })
 
+// rest password email route
 router.post('/forgetPasswordEmail',async(req,res)=>{
   try{
     const { email } = req.body;
@@ -130,7 +139,7 @@ router.post('/forgetPasswordEmail',async(req,res)=>{
   }
 })
 
-
+// resend reset password email route
 router.post("/ResendforgetPasswordEmail",async(req,res)=>{
   try{
     const { email } = req.body;
@@ -145,8 +154,8 @@ router.post("/ResendforgetPasswordEmail",async(req,res)=>{
   }
 })
 
-
-router.post("/updatePassword",async(req,res)=>{
+// update password route
+router.post("/updatePassword",auth,async(req,res)=>{
   try{    
     const {token , email , password  } = req.body;
     if(!token || !email) return res.status(400).send("ResetToken/Email is Required")
@@ -154,7 +163,7 @@ router.post("/updatePassword",async(req,res)=>{
     if(!user) res.status(400).send("User Does Not Exits")
     const  reseTtoken = await resetTokenModel.find({userId : user._id});
 
-    if(reseTtoken.length <= 0 ) return res.status(400).send("Reset Token Does Not Exist")
+    if(reseTtoken.length <= 0 ) return res.status(400).send("Reset Email is Expired")
     const {expiresAt ,hashedresetToken} = reseTtoken[0];
 
     if(expiresAt < Date.now()){
@@ -177,7 +186,8 @@ router.post("/updatePassword",async(req,res)=>{
   }  
 })
 
-router.post("/uploadProfileImage",async(req,res)=>{
+// update profile Image route
+router.post("/uploadProfileImage",auth,async(req,res)=>{
 
   const { image, id } = req.body;
   try {
@@ -193,7 +203,9 @@ router.post("/uploadProfileImage",async(req,res)=>{
   }
 });
   
-  router.post("/updateProfileDetail",async(req,res)=>{
+
+// update Profile detail route
+router.post("/updateProfileDetail",auth,async(req,res)=>{
   const { name, id , contactNumber } = req.body;
   try {
     const user = await userModel.findOneAndUpdate({ _id: id }, {
@@ -202,18 +214,12 @@ router.post("/uploadProfileImage",async(req,res)=>{
       }
     },{ returnDocument: 'after' })
     res.status(200).send({"name" : user.name , "contactNumber" : user.contactNumber})
-
   } catch(error) {
     console.log(error)
     res.status(500).send(error.message)
   }
 
 })
-
-
-
-
-
 
 
 module.exports = router;
